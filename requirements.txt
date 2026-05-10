@@ -1,0 +1,8 @@
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.14.0
+sentencepiece
+rouge-score
+nltk
+scikit-learn
+numpy
