@@ -1,0 +1,16 @@
+model/
+model_old/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environments
+venv/
+env/
+.env
