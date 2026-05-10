@@ -1,5 +1,4 @@
 model/
-model_old/
 *.safetensors
 *.bin
 *.pt
