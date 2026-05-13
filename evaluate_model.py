@@ -17,7 +17,7 @@ except LookupError:
 from src.pipeline import HybridArabicSummarizationPipeline
 from src.evaluate import SummarizationEvaluator
 from datasets import load_dataset
-from transformers import AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 
 
@@ -62,8 +62,6 @@ def main():
     print(f"Model type: {type(pipeline.abstractive.model).__name__}")
     print(f"Model device: {pipeline.abstractive.model.device}")
     
-    # Check if model weights changed from base AraT5
-    # T5 architecture: encoder.block[0].layer[0].SelfAttention.q
     print("\nLoading base AraT5 for comparison...")
     base_model = AutoModelForSeq2SeqLM.from_pretrained("UBC-NLP/AraT5-base")
     
@@ -79,16 +77,70 @@ def main():
     else:
         print("✅ Model weights are different from base (fine-tuned)")
     
-    # ========== DEBUG: Quick generation test ==========
+    # ========== DEBUG: Generation parameter tests ==========
     print("\n" + "=" * 70)
-    print("[DEBUG] QUICK GENERATION TEST")
+    print("[DEBUG] TESTING GENERATION WITH DIFFERENT PARAMETERS")
     print("=" * 70)
     
-    test_article = "القاهرة - أعلن البنك المركزي المصري اليوم عن قراره بتثبيت أسعار الفائدة على الإيداع والإقراض لليلة واحدة عند 18.25% و19.25% على التوالي."
-    print(f"Input article: {test_article[:60]}...")
+    test_input = "القاهرة - أعلن البنك المركزي المصري اليوم عن قراره بتثبيت أسعار الفائدة على الإيداع والإقراض لليلة واحدة عند 18.25% و19.25% على التوالي ."
+    print(f"Test input: {test_input[:60]}...")
+    
+    # Test 1: Default pipeline generation
+    print("\n--- Test 1: Default pipeline (max_length=128) ---")
+    result1 = pipeline.abstractive.summarize(test_input, max_length=128)
+    print(f"Output: '{result1}'")
+    print(f"Length: {len(result1)} chars, Tokens: {len(result1.split())}")
+    
+    # Test 2: Short max_length
+    print("\n--- Test 2: Short max_length (50) ---")
+    result2 = pipeline.abstractive.summarize(test_input, max_length=50)
+    print(f"Output: '{result2}'")
+    print(f"Length: {len(result2)} chars, Tokens: {len(result2.split())}")
+    
+    # Test 3: Direct generation with min_length forced
+    print("\n--- Test 3: Direct generate (min_length=10, forced) ---")
+    tokenizer = AutoTokenizer.from_pretrained("./model")
+    model = AutoModelForSeq2SeqLM.from_pretrained("./model")
+    
+    inputs = tokenizer("summarize: " + test_input, return_tensors="pt", max_length=512, truncation=True)
+    outputs = model.generate(
+        **inputs,
+        max_length=128,
+        min_length=10,
+        num_beams=4,
+        early_stopping=True,
+        no_repeat_ngram_size=2,
+        do_sample=False
+    )
+    result3 = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"Output: '{result3}'")
+    print(f"Length: {len(result3)} chars, Tokens: {len(result3.split())}")
+    
+    # Test 4: Check raw token IDs (are they all <pad>?)
+    print("\n--- Test 4: Raw token analysis ---")
+    print(f"Generated token IDs: {outputs[0].tolist()[:20]}")
+    print(f"First non-special token: '{tokenizer.decode([outputs[0][0].item()])}'")
+    
+    # Test 5: Greedy decoding (no beams)
+    print("\n--- Test 5: Greedy decoding (no beams) ---")
+    outputs_greedy = model.generate(
+        **inputs,
+        max_length=128,
+        min_length=5,
+        do_sample=False,
+        num_beams=1
+    )
+    result5 = tokenizer.decode(outputs_greedy[0], skip_special_tokens=True)
+    print(f"Output: '{result5}'")
+    print(f"Length: {len(result5)} chars")
+    
+    # ========== DEBUG: Quick hybrid pipeline test ==========
+    print("\n" + "=" * 70)
+    print("[DEBUG] QUICK HYBRID PIPELINE TEST")
+    print("=" * 70)
     
     try:
-        result = pipeline.summarize(test_article, mode="hybrid", top_n=3, debug=True)
+        result = pipeline.summarize(test_input, mode="hybrid", top_n=3, debug=True)
         print(f"\nExtractive output: {result['extractive'][:100]}...")
         print(f"Hybrid output: {result['hybrid'][:100]}...")
         
@@ -114,7 +166,6 @@ def main():
         print(f"❌ Failed to load datasets: {e}")
         sys.exit(1)
     
-    # ========== EVALUATION ==========
     print("\n" + "=" * 70)
     print("[2/4] EXTRACTIVE MODE (AraBERT)")
     print("=" * 70)

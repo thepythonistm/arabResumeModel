@@ -107,10 +107,6 @@ GENERATED SUMMARY (Your Model):
 
 "أعلنت النيابة العامة في ميونيخ أن رجل من جمهورية الجبل الأبيض ""مونتنيغرو"" الألماني احتجزته السلطات الألمانية بتهمة التخابر مع تنظيم ""داعش"" في هجوم باريس الذي وقع في نوفمبر/نوفمبر الماضي."
 
-### 1. Download the Model
-Download the fine-tuned model from the link below and extract it to your project folder:
-The fine-tuned model weights (~2.5 GB) are available here:
-https://drive.google.com/drive/folders/151tVfp8ecZUwYXQBNFPl3RqzPd7DFekk?usp=sharing
 
 ├── src/
 │   ├── __init__.py          # Package exports
@@ -126,84 +122,14 @@ https://drive.google.com/drive/folders/151tVfp8ecZUwYXQBNFPl3RqzPd7DFekk?usp=sha
 ├── evaluate_model.py        # Full evaluation script
 ├── requirements.txt
 └── README.md
-PS C:\Users\hp\arabic_summarization_deliverable> python evaluate_model.py
 
-ARABIC SUMMARIZATION MODEL - EVALUATION
+### 1. Download the Model
+Download the fine-tuned model from the link below and extract it to your project folder:
+The fine-tuned model weights (~2.5 GB) are available here:
+https://drive.google.com/drive/folders/1zcOhXGjHWvd5IGs3MK5IIiZtUNas54mk?usp=sharing
 
+use this command to download model inside folder :
+python -m gdown --folder "1zcOhXGjHWvd5IGs3MK5IIiZtUNas54mk" -O ./model
 
-[1/4] Loading Hybrid Pipeline (AraBERT + AraT5)...
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights: 100%|████████████████████████████████████████| 199/199 [00:00<00:00, 2810.90it/s]
-[transformers] BertModel LOAD REPORT from: aubmindlab/bert-base-arabertv2
-Key                                        | Status     |  | 
--------------------------------------------+------------+--+-
-cls.predictions.transform.dense.bias       | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.bias   | UNEXPECTED |  | 
-cls.seq_relationship.weight                | UNEXPECTED |  | 
-cls.predictions.transform.dense.weight     | UNEXPECTED |  | 
-cls.predictions.transform.LayerNorm.weight | UNEXPECTED |  | 
-cls.seq_relationship.bias                  | UNEXPECTED |  | 
-cls.predictions.bias                       | UNEXPECTED |  | 
-
-Notes:
-- UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
-Loading weights: 100%|████████████████████████████████████████| 284/284 [00:00<00:00, 2613.06it/s]
-[transformers] The tied weights mapping and config for this model specifies to tie shared.weight to lm_head.weight, but both are present in the checkpoints with different values, so we will NOT tie them. You should update the config with `tie_word_embeddings=False` to silence this warning.
-[transformers] The tied weights mapping and config for this model specifies to tie shared.weight to encoder.embed_tokens.weight, but both are present in the checkpoints with different values, so we will NOT tie them. You should update the config with `tie_word_embeddings=False` to silence this warning.
-[transformers] The tied weights mapping and config for this model specifies to tie shared.weight to decoder.embed_tokens.weight, but both are present in the checkpoints with different values, so we will NOT tie them. You should update the config with `tie_word_embeddings=False` to silence this warning.
-✅ Pipeline loaded
-
-[Load] Fetching datasets...
-   EASC: 153 samples | AraSum: 49603 samples
-   EASC columns: ['article', 'summary']
-   AraSum columns: ['index', 'summary', 'article']
-
-
-[2/4] EXTRACTIVE MODE (AraBERT)
-
-Evaluating Extractive on 50 samples...
-
-EVALUATION REPORT
-
-Samples evaluated: 50
-ROUGE-1:  0.2902
-ROUGE-2:  0.1474
-ROUGE-L:  0.2883
-BLEU:     0.1983
-
-
-
-[3/4] HYBRID MODE (AraBERT → AraT5)
-
-Evaluating Hybrid on 50 samples...
-
-EVALUATION REPORT
-
-Samples evaluated: 50
-ROUGE-1:  0.0000
-ROUGE-2:  0.0000
-ROUGE-L:  0.0000
-BLEU:     0.0036
-
-
-[4/4] ABSTRACTIVE MODE (AraT5)
-
-Evaluating Abstractive on 50 samples...
-
-EVALUATION REPORT
-
-Samples evaluated: 50
-ROUGE-1:  0.0333
-ROUGE-2:  0.0000
-ROUGE-L:  0.0333
-BLEU:     0.0189
-
-
-COMPARISON SUMMARY
-Mode                      |  ROUGE-1 |  ROUGE-2 |  ROUGE-L |     BLEU
-----------------------------------------------------------------------
-Extractive (AraBERT)      |   0.2902 |   0.1474 |   0.2883 |   0.1983
-Hybrid (AraBERT→AraT5)    |   0.0000 |   0.0000 |   0.0000 |   0.0036
-Abstractive (AraT5)       |   0.0333 |   0.0000 |   0.0333 |   0.0189
-
-Evaluation complete!
+wait unitil (model.safetensors) downloaded 
+ then to test run (python evaluate_model.py)

@@ -32,7 +32,7 @@ class AbstractiveSummarizer:
 
         with torch.no_grad():
             outputs = self.model.generate(
-                **inputs,
+                 **inputs,
                 max_length=max_length,
                 min_length=min_length,
                 num_beams=num_beams,
@@ -40,6 +40,8 @@ class AbstractiveSummarizer:
                 no_repeat_ngram_size=no_repeat_ngram_size,
                 length_penalty=length_penalty,
                 do_sample=False,
+                pad_token_id=self.model.config.eos_token_id,
+                eos_token_id=self.model.config.eos_token_id,
             )
 
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
