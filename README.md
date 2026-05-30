@@ -375,7 +375,8 @@ gdown --folder https://drive.google.com/drive/folders/1wqF4kYOZmQlEYiBN4z6GZ5XJ9
 # Run Evaluation:
    python eval.py --demo
 
-#
+#test models on 3 articles run:
+   python test_3_articles.py
 
 # {
 #   "rouge1": 0.38,
