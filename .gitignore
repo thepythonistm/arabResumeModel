@@ -1,16 +1,40 @@
+# Models (too large for Git — ~550MB total)
 model/
-*.safetensors
 *.bin
+*.safetensors
 *.pt
 *.pth
 
+# Generated outputs
+evaluation_report.json
+*.jsonl
+outputs/
+results/
+
 # Python cache
 __pycache__/
-*.pyc
-.ipynb_checkpoints/
+*.py[cod]
+*$py.class
+*.so
 
-# Environments
+# Virtual environments
 venv/
 env/
-.env
-.history
+ENV/
+
+# IDE
+.vscode/
+.idea/
+.history/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+# Test artifacts
+evaluation_report.json
+test.py
+__pycache__/

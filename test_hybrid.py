@@ -1,4 +1,5 @@
-from src.pipeline import HybridArabicSummarizationPipeline
+"""Test script for the Arabic hybrid summarizer."""
+from src.hybrid import ArabicSummarizer
 
 text = """
 القاهرة - أعلن البنك المركزي المصري اليوم عن قراره بتثبيت أسعار الفائدة على 
@@ -9,10 +10,17 @@ text = """
 وأضاف أن المؤشرات الاقتصادية تظهر بوادر تحسن في معدلات النمو.
 """
 
-pipeline = HybridArabicSummarizationPipeline("./model")
-result = pipeline.summarize(text, mode="both", top_n=3, debug=True)
+summarizer = ArabicSummarizer(
+    extractive_model_path="./model/extractive",
+    abstractive_model_path="./model/abstractive/best",
+)
 
-print("\n" + "="*50)
+result = summarizer.summarize(text, domain="news", return_full=True)
+
+print("\n" + "=" * 50)
 for key, value in result.items():
     print(f"\n{key.upper()}:")
-    print(value)
+    if isinstance(value, list):
+        print(value)
+    else:
+        print(value)

@@ -1,47 +1,76 @@
+"""Extractive sentence scoring using AraBERT.
+
+Builds an extractive scaffold by classifying each sentence's
+importance relative to the article summary.
 """
-Extractive Arabic Summarization using AraBERT embeddings.
-"""
+
+import warnings
+from typing import List, Tuple
 
 import numpy as np
 import torch
-from sklearn.metrics.pairwise import cosine_similarity
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+warnings.filterwarnings("ignore")
 
 
-class ExtractiveSummarizer:
-    def __init__(self, model_name: str = "aubmindlab/bert-base-arabertv2", device: str = None):
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name).to(self.device)
+class ExtractiveScaffoldBuilder:
+    """Extractive scaffold builder using fine-tuned AraBERT.
+
+    Example:
+        >>> builder = ExtractiveScaffoldBuilder("./model/extractive")
+        >>> sentences = ["sentence 1.", "sentence 2.", "sentence 3."]
+        >>> scaffold, scores = builder.build_scaffold(sentences, top_k=3)
+        >>> print(scaffold)
+    """
+
+    def __init__(
+        self,
+        model_path: str = "aubmindlab/bert-base-arabertv02",
+        device: str = "auto",
+        max_length: int = 256,
+    ):
+        if device == "auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device(device)
+
+        self.max_length = max_length
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_path
+        ).to(self.device)
         self.model.eval()
 
-    def _encode(self, texts: list) -> np.ndarray:
-        embeddings = []
-        batch_size = 8
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i : i + batch_size]
-            inputs = self.tokenizer(
-                batch, return_tensors="pt", padding=True, truncation=True, max_length=512
-            ).to(self.device)
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-            batch_emb = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
-            embeddings.extend(batch_emb)
-        return np.array(embeddings)
+    @torch.no_grad()
+    def score_sentences(self, sentences: List[str]) -> List[float]:
+        """Score each sentence for salience."""
+        if not sentences:
+            return []
 
-    def summarize(self, text: str, top_n: int = 3) -> str:
-        try:
-            from nltk.tokenize import sent_tokenize
-        except ImportError:
-            raise ImportError("nltk is required. Run: pip install nltk")
+        scores = []
+        for sent in sentences:
+            encoding = self.tokenizer(
+                sent,
+                truncation=True,
+                padding="max_length",
+                max_length=self.max_length,
+                return_tensors="pt",
+            )
+            encoding = {k: v.to(self.device) for k, v in encoding.items()}
+            outputs = self.model(**encoding)
+            prob = torch.softmax(outputs.logits, dim=-1)[0][1].item()
+            scores.append(prob)
+        return scores
 
-        sentences = sent_tokenize(text)
-        if len(sentences) <= top_n:
-            return text
+    def build_scaffold(
+        self, sentences: List[str], top_k: int = 3
+    ) -> Tuple[str, List[float]]:
+        """Build extractive scaffold from top-K sentences."""
+        scores = self.score_sentences(sentences)
+        if not scores:
+            return "", []
 
-        embeddings = self._encode(sentences)
-        sim_matrix = cosine_similarity(embeddings)
-        scores = sim_matrix.sum(axis=1)
-        ranked_indices = np.argsort(scores)[-top_n:]
-        selected = sorted(ranked_indices)
-        return " ".join([sentences[i] for i in selected])
+        top_indices = sorted(np.argsort(scores)[-top_k:][::-1])
+        scaffold = " ".join([sentences[i] for i in top_indices])
+        return scaffold, scores
