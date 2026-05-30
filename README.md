@@ -294,44 +294,6 @@ Loss curves show steady convergence with no overfitting (train and val decrease 
 
 ## Project Structure
 
-```
-arabic-summarization/
-├── README.md                          # This file
-├── requirements.txt                   # Python dependencies
-├── .gitignore
-│
-├── src/                               # Source code
-│   ├── __init__.py
-│   ├── extractive.py                  # Extractive scaffold builder (AraBERT)
-│   ├── abstractive.py                 # Abstractive generator (AraT5)
-│   ├── hybrid.py                      # End-to-end pipeline orchestrator
-│   ├── data_cleaning.py               # Data preprocessing & normalization
-│   ├── utils.py                       # Helper functions (Record class, JSONL I/O)
-│   └── evaluation.py                  # ROUGE, BLEU, BERTScore evaluation
-│
-├── notebooks/                         # Colab notebooks
-│   └── arabic_summarization_training.ipynb
-│
-├── models/                            # Downloaded models (not in git)
-│   ├── extractive/
-│   │   └── best/                      # Fine-tuned AraBERT classifier
-│   └── abstractive/
-│       ├── best/                      # LoRA adapter weights
-│       └── best_merged/               # Merged AraT5 + LoRA (for inference)
-│
-├── data/                              # Dataset storage
-│   ├── splits/
-│   │   ├── train.jsonl                # 20,652 records
-│   │   ├── val.jsonl                  # 2,581 records
-│   │   └── test.jsonl                 # 2,582 records
-│   └── abstractive_dataset.pt         # Pre-tokenized cache for AraT5 training
-│
-└── outputs/                           # Evaluation results
-    ├── eval_metrics.json
-    └── sample_predictions.json
-```
-
----
 
 ## Installation
 
@@ -345,13 +307,10 @@ arabic-summarization/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/arabic-summarization.git
-cd arabic-summarization
+git clone https://github.com/thepythonistm/arabResumeModel.git
+cd arabic-summarization_deliverable
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
+
 
 # Install dependencies
 pip install -r requirements.txt
@@ -384,19 +343,23 @@ gdown>=5.0.0
 ### Download Pre-trained Models
 
 We provide a script that automatically downloads the fine-tuned models from Google Drive:
+# optionA:
+# quick download using script download_models.py:
+creact folder with name : model
+and then run in terminal :
+python download_models.py
+(this will dowload models to your model folde)
 
-```bash
+# option B:
 # Create models directory
-mkdir -p models/extractive models/abstractive
+mkdir -p model/extractive model/abstractive
 
 # Download extractive model (AraBERT)
-gdown --folder https://drive.google.com/drive/folders/YOUR_EXTRACTIVE_FOLDER_ID -O models/extractive/best
+gdown --folder https://drive.google.com/drive/folders/1Ld4QwNejkEhx7AFBPD8at8v_xSJbee3I?usp=drive_link -O model/extractive/best
 
 # Download abstractive model (merged AraT5 + LoRA)
-gdown --folder https://drive.google.com/drive/folders/YOUR_ABSTRACTIVE_FOLDER_ID -O models/abstractive/best_merged
+gdown --folder https://drive.google.com/drive/folders/1wqF4kYOZmQlEYiBN4z6GZ5XJ9pW5B57Q?usp=drive_link -O model/abstractive/best_merged
 ```
-
-> **Note**: Replace `YOUR_*_FOLDER_ID` with your actual Google Drive folder IDs. The merged model (`best_merged/`) is recommended for inference as it has zero PEFT overhead.
 
 #### Alternative: Manual Download
 
@@ -404,68 +367,16 @@ gdown --folder https://drive.google.com/drive/folders/YOUR_ABSTRACTIVE_FOLDER_ID
 2. Right-click `best/` (extractive) → Share → Copy link
 3. Extract the folder ID and use with `gdown --folder`
 
-### Run Inference
 
-#### Option A: Use the Hybrid Pipeline (Recommended)
 
-```python
-from src.hybrid import ArabicSummarizer
+#Test Pipeline:
+   python test_hybrid.py
 
-# Initialize (auto-downloads models if needed)
-summarizer = ArabicSummarizer(
-    extractive_model_path="./models/extractive/best",
-    abstractive_model_path="./models/abstractive/best_merged",
-    device="cuda"  # or "cpu"
-)
+# Run Evaluation:
+   python eval.py --demo
 
-# Summarize an article
-article = """أعلنت وزارة الصحة اليوم عن اكتشاف أول حالة من فيروس جديد في المملكة.
-الفيروس ينتقل عبر الهواء ويسبب أعراضا مشابهة للإنفلونزا.
-الوزارة دعت المواطنين إلى اتخاذ الاحتياطات اللازمة وارتداء الكمامات
-في الأماكن المزدحمة."""
+#
 
-result = summarizer.summarize(article, domain="news")
-print(result["summary"])
-# Output: "أعلنت وزارة الصحة عن اكتشاف أول حالة فيروس جديد..."
-```
-
-#### Option B: Use Individual Components
-
-```python
-from src.extractive import ExtractiveScaffoldBuilder
-from src.abstractive import AbstractiveSummarizer
-
-# Step 1: Build extractive scaffold
-extractive = ExtractiveScaffoldBuilder("./models/extractive/best")
-scaffold, scores = extractive.build_scaffold(article_sentences, top_k=3)
-
-# Step 2: Generate abstractive summary
-abstractive = AbstractiveSummarizer("./models/abstractive/best_merged")
-summary = abstractive.generate(
-    article=article,
-    scaffold=scaffold,
-    keywords=["وزارة", "الصحة", "فيروس"],
-    domain="news"
-)
-```
-
-### Run Evaluation
-
-```python
-from src.evaluation import evaluate_model
-from src.hybrid import ArabicSummarizer
-
-summarizer = ArabicSummarizer()
-
-# Evaluate on test set
-metrics = evaluate_model(
-    summarizer=summarizer,
-    test_path="./data/splits/test.jsonl",
-    num_samples=200,  # Set to None for full test set
-    output_dir="./outputs"
-)
-
-print(metrics)
 # {
 #   "rouge1": 0.38,
 #   "rouge2": 0.18,
@@ -475,37 +386,7 @@ print(metrics)
 # }
 ```
 
-### Run Training
 
-#### Extractive Model
-
-```bash
-python -m src.extractive \
-    --train_data ./data/splits/train.jsonl \
-    --val_data ./data/splits/val.jsonl \
-    --output_dir ./models/extractive/best \
-    --epochs 1 \
-    --batch_size 32 \
-    --lr 2e-5
-```
-
-#### Abstractive Model
-
-```bash
-python -m src.abstractive \
-    --train_data ./data/splits/train.jsonl \
-    --val_data ./data/splits/val.jsonl \
-    --extractive_model ./models/extractive/best \
-    --output_dir ./models/abstractive/best \
-    --epochs 5 \
-    --batch_size 4 \
-    --grad_accum 2 \
-    --lr 3e-4 \
-    --lora_r 8 \
-    --lora_alpha 16
-```
-
----
 
 ## Evaluation Metrics
 
@@ -598,15 +479,7 @@ If you use this work in your research, please cite:
 ---
 
 ## License
-respective licenses:
+The underlying models (AraBERT, AraT5) are subject to their respective licenses:
 - **AraBERT**: Apache 2.0
 - **AraT5**: MIT License
 
----
-
-## Acknowledgments
-
-- [AUB Mind Lab](https://github.com/aub-mind) for AraBERT
-- [UBC NLP Group](https://github.com/UBC-NLP) for AraT5
-- [Hugging Face PEFT](https://github.com/huggingface/peft) team for LoRA implementation
-- Google Colab for providing free GPU resources for training
