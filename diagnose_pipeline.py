@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Diagnostic script showing the 3 stages of the hybrid pipeline:
 1. Extractive scaffold (AraBERT)
@@ -72,12 +71,10 @@ def run_diagnostic(article, no_fallback=False, extractive_path="./model/extracti
     print("HYBRID PIPELINE — DIAGNOSTIC REPORT")
     print("=" * 70)
 
-    # ── Stage 0: Input ──────────────────────────────────────────────────
     print("\n📄 INPUT ARTICLE:")
     print(f"   {article[:120]}...")
     print(f"   Length: {len(article.split())} words")
 
-    # ── Stage 1: Extractive (AraBERT) ──────────────────────────────────
     print("\n" + "─" * 70)
     print("🔍 STAGE 1: EXTRACTIVE SCAFFOLD (AraBERT)")
     print("─" * 70)
@@ -95,7 +92,6 @@ def run_diagnostic(article, no_fallback=False, extractive_path="./model/extracti
     print(f"\n   🔨 EXTRACTIVE SCAFFOLD:")
     print(f"   {scaffold}")
 
-    # ── Stage 2: Abstractive (AraT5 + LoRA) ────────────────────────────
     print("\n" + "─" * 70)
     print("✍️  STAGE 2: RAW ABSTRACTIVE OUTPUT (AraT5 + LoRA)")
     print("   BEFORE quality gate / fallback")
@@ -111,7 +107,6 @@ def run_diagnostic(article, no_fallback=False, extractive_path="./model/extracti
     print(f"\n   ✍️  RAW ABSTRACTIVE OUTPUT:")
     print(f"   {raw_abstractive}")
 
-    # ── Stage 3: Quality Gate ─────────────────────────────────────────
     print("\n" + "─" * 70)
     print("🛡️  STAGE 3: QUALITY GATE / FALLBACK DECISION")
     print("─" * 70)

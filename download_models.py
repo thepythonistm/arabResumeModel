@@ -13,75 +13,82 @@ except ImportError:
     import gdown
 
 
-# ========== PASTE YOUR IDs HERE ==========
-EXTRACTIVE_FOLDER_ID = "1Ld4QwNejkEhx7AFBPD8at8v_xSJbee3I"      
-ABSTRACTIVE_FOLDER_ID = "1wqF4kYOZmQlEYiBN4z6GZ5XJ9pW5B57Q"    
+# ========== GOOGLE DRIVE FOLDER IDs ==========
+EXTRACTIVE_FOLDER_ID = "1Ld4QwNejkEhx7AFBPD8at8v_xSJbee3I"
+ABSTRACTIVE_FOLDER_ID = "1wqF4kYOZmQlEYiBN4z6GZ5XJ9pW5B57Q"
+EXTRACTIVE_EASC_FOLDER_ID = "1DbjMUlo_HVcI4cMxaR6f5oFoaRSQ244t"
 
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE, "model")
 
-EXTRACTIVE_DIR = os.path.join(MODEL_DIR, "extractive", "best")
+EXTRACTIVE_DIR = os.path.join(MODEL_DIR, "extractive")
+EXTRACTIVE_EASC_DIR = os.path.join(MODEL_DIR, "extractive_easc")
 ABSTRACTIVE_DIR = os.path.join(MODEL_DIR, "abstractive", "best")
 
 
 def download_folder(folder_id, output_dir, desc):
     """Download a Google Drive folder using gdown."""
     os.makedirs(output_dir, exist_ok=True)
-    
-    pytorch_bin = os.path.join(output_dir, "pytorch_model.bin")
-    safetensors = os.path.join(output_dir, "model.safetensors")
-    
-    if os.path.exists(pytorch_bin) or os.path.exists(safetensors):
-        print(f"✅ {desc} already exists at {output_dir}")
+
+    has_model = any(
+        f.endswith((".bin", ".safetensors"))
+        for f in os.listdir(output_dir)
+    ) if os.listdir(output_dir) else False
+
+    if has_model:
+        print(f"   {desc} already exists. Skipping.")
         return True
-    
-    if "YOUR_" in folder_id:
-        print(f"\n❌ ERROR: Replace placeholder ID for {desc}")
-        print(f"   Edit EXTRACTIVE_FOLDER_ID or ABSTRACTIVE_FOLDER_ID in this file")
-        return False
-    
-    print(f"\n📥 Downloading {desc}...")
+
+    print(f"\n   Downloading {desc}...")
     print(f"   From: https://drive.google.com/drive/folders/{folder_id}")
     print(f"   To:   {output_dir}")
-    
+
     try:
         gdown.download_folder(
             id=folder_id,
             output=output_dir,
             quiet=False,
-            use_cookies=False
+            use_cookies=False,
         )
-        print(f"✅ {desc} downloaded")
+        print(f"   {desc} downloaded successfully!")
         return True
     except Exception as e:
-        print(f"❌ Failed: {e}")
+        print(f"   Error: {e}")
         return False
 
 
 def main():
-    print("=" * 50)
-    print("Arabic Summarization — Model Downloader")
-    print("=" * 50)
-    
-    if "YOUR_" in EXTRACTIVE_FOLDER_ID or "YOUR_" in ABSTRACTIVE_FOLDER_ID:
-        print("\n⚠️  WARNING: You haven't set your Google Drive folder IDs yet!")
-        print("   Open download_models.py and paste your IDs at the top.\n")
-        return
-    
+    print("=" * 55)
+    print("Arabic Summarizer — Model Downloader")
+    print("=" * 55)
+
+    print("\nWhich extractive model do you want?")
+    print("  1. Original (AraSum + WikiHow-Ar) — RECOMMENDED")
+    print("  2. EASC Benchmark — for academic comparison")
+    choice = input("Enter 1 or 2 (default: 1): ").strip() or "1"
+
     success = True
-    success &= download_folder(EXTRACTIVE_FOLDER_ID, EXTRACTIVE_DIR, "Extractive Model (AraBERT)")
+
     success &= download_folder(ABSTRACTIVE_FOLDER_ID, ABSTRACTIVE_DIR, "Abstractive Model (AraT5)")
-    
-    print("\n" + "=" * 50)
-    if success:
-        print("✅ All models ready!")
-        print(f"   Extractive:  {EXTRACTIVE_DIR}")
-        print(f"   Abstractive: {ABSTRACTIVE_DIR}")
-        print("\n   Run: python src/hybrid.py")
+
+    if choice == "2":
+        print("\n   [EASC Benchmark selected]")
+        success &= download_folder(EXTRACTIVE_EASC_FOLDER_ID, EXTRACTIVE_EASC_DIR, "Extractive Model (EASC)")
+        print(f"\n   Use: ArabicSummarizer('./model/extractive_easc', './model/abstractive/best')")
     else:
-        print("❌ Some downloads failed. Check errors above.")
-    print("=" * 50)
+        success &= download_folder(EXTRACTIVE_FOLDER_ID, EXTRACTIVE_DIR, "Extractive Model (Original)")
+        print(f"\n   Use: ArabicSummarizer('./model/extractive', './model/abstractive/best')")
+
+    print("\n" + "=" * 55)
+    if success:
+        print("All models ready!")
+        print(f"Models saved to: {MODEL_DIR}")
+    else:
+        print("Some downloads failed.")
+        print("If gdown fails due to Drive quota, download manually and place in:")
+        print(f"   {MODEL_DIR}")
+    print("=" * 55)
 
 
 if __name__ == "__main__":
